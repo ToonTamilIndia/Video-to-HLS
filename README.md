@@ -4,7 +4,7 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/ToonTamilIndia/Video-to-HLS?style=social)](https://github.com/ToonTamilIndia/Video-to-HLS/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/ToonTamilIndia/Video-to-HLS?style=social)](https://github.com/ToonTamilIndia/Video-to-HLS/network/members)
 [![GitHub issues](https://img.shields.io/github/issues/ToonTamilIndia/Video-to-HLS)](https://github.com/ToonTamilIndia/Video-to-HLS/issues)
-[![License](https://img.shields.io/github/license/ToonTamilIndia/Video-to-HLS)](https://www.google.com/url?sa=E&source=gmail&q=https://github.com/ToonTamilIndia/Video-to-HLS/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/ToonTamilIndia/Video-to-HLS)](https://github.com/ToonTamilIndia/Video-to-HLS/blob/main/LICENSE)
 
 **Transform your video files into HTTP Live Streaming (HLS) format with unparalleled ease and control!** 🌐
 
@@ -31,14 +31,14 @@
 
 ## 📋 Table of Contents
 
-1.  [🌟 Why V2HLS? The Advantages](#why-v2hls-the-advantages)
-2.  [🚀 Getting Started](#getting-started)
+1.  [🌟 Why V2HLS? The Advantages](#-why-v2hls-the-advantages)
+2.  [🚀 Getting Started](#-getting-started)
     * [Prerequisites: The Essentials](#prerequisites-the-essentials-️)
-        * [Python 3.7+](#python-37)
-        * [FFmpeg & FFprobe](#ffmpeg--ffprobe)
-        * [Git (for Deployment)](#git-for-deployment)
-    * [Installation & Setup](#installation--setup-️)
-3.  [🔧 Configuration Deep Dive (`config.json`)](#configuration-deep-dive-configjson-)
+        * [Python 3.7+](#1-python-37-)
+        * [FFmpeg & FFprobe](#2-ffmpeg--ffprobe-%EF%B8%8F)
+        * [Git (for Deployment)](#3-git-for-deployment--optional)
+    * [Installation & Setup](#installation--setup-%EF%B8%8F)
+3.  [🔧 Configuration Deep Dive (`config.json`)](#-configuration-deep-dive-configjson)
     * [Locating `config.json`](#locating-configjson)
     * [Detailed Parameter Breakdown](#detailed-parameter-breakdown)
         * [`ffmpeg_path`](#ffmpeg_path-string)
@@ -49,35 +49,35 @@
         * [`default_segment_duration`](#default_segment_duration-integer)
         * [`github_deployment`](#github_deployment-object)
     * [Environment Variables for GitHub Deployment](#environment-variables-for-github-deployment-)
-4.  [⚙️ How to Use V2HLS (CLI Usage)](#how-to-use-v2hls-cli-usage-)
+4.  [⚙️ How to Use V2HLS (CLI Usage)](#%EF%B8%8F-how-to-use-v2hls-cli-usage)
     * [Basic Command Structure](#basic-command-structure)
     * [Positional Arguments](#positional-arguments)
     * [Optional Arguments (Flags)](#optional-arguments-flags)
-        * [Video Quality Selection (`-vq`, `--video-qualities`)](#video-quality-selection--vq---video-qualities-)
-        * [Segment Duration (`-sd`, `--segment-duration`)](#segment-duration--sd---segment-duration-)
-        * [FFmpeg Preset (`-p`, `--preset`)](#ffmpeg-preset--p---preset-)
-        * [Thumbnail Control (`--no-thumbnail`, `--thumbnail-time`)](#thumbnail-control---no-thumbnail---thumbnail-time--)
-        * [GitHub Pages Deployment (`--deploy` & `--gh-*` flags)](#github-pages-deployment---deploy----gh--flags-)
-        * [Verbose Logging (`-v`, `--verbose`)](#verbose-logging--v---verbose-)
-        * [Getting Help (`-h`, `--help`)](#getting-help--h---help-)
+        * [Video Quality Selection (`-vq`, `--video-qualities`)](#video-quality-selection--vq---video-qualities)
+        * [Segment Duration (`-sd`, `--segment-duration`)](#segment-duration--sd---segment-duration)
+        * [FFmpeg Preset (`-p`, `--preset`)](#ffmpeg-preset--p---preset)
+        * [Thumbnail Control (`--no-thumbnail`, `--thumbnail-time`)](#thumbnail-control---no-thumbnail---thumbnail-time)
+        * [GitHub Pages Deployment (`--deploy` & `--gh-*` flags)](#github-pages-deployment---deploy----gh--flags)
+        * [Verbose Logging (`-v`, `--verbose`)](#verbose-logging--v---verbose)
+        * [Getting Help (`-h`, `--help`)](#getting-help--h---help)
     * [Practical Usage Examples](#practical-usage-examples)
-5.  [🔄 The V2HLS Workflow: Under the Hood](#the-v2hls-workflow-under-the-hood-)
-6.  [🗂️ Understanding the Output](#understanding-the-output-)
+5.  [🔄 The V2HLS Workflow: Under the Hood](#-the-v2hls-workflow-under-the-hood)
+6.  [🗂️ Understanding the Output](#%EF%B8%8F-understanding-the-output)
     * [Directory Structure Example](#directory-structure-example)
     * [Key Files Explained](#key-files-explained)
-7.  [▶️ Playing Your HLS Streams](#playing-your-hls-streams-)
+7.  [▶️ Playing Your HLS Streams](#%EF%B8%8F-playing-your-hls-streams)
     * [Web-Based Players](#web-based-players)
     * [Desktop/Mobile Players](#desktopmobile-players)
     * [Basic HTML Example with HLS.js](#basic-html-example-with-hlsjs)
-8.  [🛠️ Advanced Customization & Tips](#advanced-customization--tips-)
-    * [Optimizing Video Variants](#optimizing-video-variants)
-    * [Choosing the Right FFmpeg Preset](#choosing-the-right-ffmpeg-preset)
-    * [Segment Duration Considerations](#segment-duration-considerations)
-9.  [🤔 Troubleshooting Common Issues](#troubleshooting-common-issues-)
-10. [📜 Script Internals: A Glimpse for Developers](#script-internals-a-glimpse-for-developers-)
-11. [🤝 Contributing to V2HLS](#contributing-to-v2hls-)
-12. [⚖️ License](#license-️)
-13. [🙏 Acknowledgements](#acknowledgements-)
+8.  [🛠️ Advanced Customization & Tips](#%EF%B8%8F-advanced-customization--tips)
+    * [Optimizing Video Variants](#optimizing-video-variants-video_variants-in-configjson)
+    * [Choosing the Right FFmpeg Preset](#choosing-the-right-ffmpeg-preset-default_ffmpeg_preset)
+    * [Segment Duration Considerations](#segment-duration-considerations-default_segment_duration)
+9.  [🤔 Troubleshooting Common Issues](#-troubleshooting-common-issues)
+10. [📜 Script Internals: A Glimpse for Developers](#-script-internals-a-glimpse-for-developers)
+11. [🤝 Contributing to V2HLS](#-contributing-to-v2hls)
+12. [⚖️ License](#%EF%B8%8F-license)
+13. [🙏 Acknowledgements](#-acknowledgements)
 
 ---
 
@@ -172,7 +172,7 @@ If you intend to use the GitHub Pages deployment feature (`--deploy`), you must 
 1.  **Clone the Repository:**
     Open your terminal or command prompt, navigate to the directory where you want to store the project, and clone the V2HLS repository from GitHub:
     ```bash
-    git clone [https://github.com/ToonTamilIndia/Video-to-HLS.git](https://github.com/ToonTamilIndia/Video-to-HLS.git)
+    git clone https://github.com/ToonTamilIndia/Video-to-HLS.git
     ```
     This will create a `Video-to-HLS` directory containing the script and configuration file.
 
@@ -981,8 +981,7 @@ Contributions, bug reports, and feature requests are welcome\! Please feel free 
 
 ## ⚖️ License
 
-This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/url?sa=E&source=gmail&q=https://github.com/ToonTamilIndia/Video-to-HLS/blob/main/LICENSE) file in the repository for the full license text.
-(Please ensure a `LICENSE` file exists at the linked path)
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/ToonTamilIndia/Video-to-HLS/blob/main/LICENSE) file in the repository for the full license text.
 
 -----
 
