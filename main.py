@@ -295,13 +295,7 @@ def generate_master_playlist(
             is_first_subtitle = False
         f.write("\n")
         
-        # Video renditions with associated audio and subtitles
-        # Ensure CODECS string is accurate for your encodes. avc1.xxxxxx for H.264, mp4a.40.2 for AAC-LC.
-        # You might need to probe the actual generated files for precise codec strings if issues arise.
-        # Common H.264 profiles: Baseline (avc1.42E0xx), Main (avc1.4D40xx), High (avc1.6400xx)
-        # For simplicity, using a common one.
-        # Example: CODECS="avc1.4D401F,mp4a.40.2" (H.264 Main Profile Level 3.1, AAC-LC)
-        
+
         # Sort video_paths by bitrate (ascending) for better player adaptation
         video_paths.sort(key=lambda x: bitrate_to_bandwidth(x[1]["bitrate"]))
 
@@ -459,12 +453,20 @@ def deploy_to_internet_archive(
 
         updated_lines = []
         for line in lines:
-            stripped = line.strip()
-            if stripped and not stripped.startswith('#'):
-                archive_url = f'{worker_url}{BASE_ARCHIVE_URL}/{os.path.dirname(relative_path)}/{stripped}'.replace('\\', '/')
-                updated_lines.append(f'{archive_url}\n')
-            else:
-                updated_lines.append(line)
+            # Replace URI="..." if it exists in the line
+            if 'URI="' in line:
+                def replace_uri(match):
+                    original_uri = match.group(1)
+                    updated_uri = f'{worker_url}{BASE_ARCHIVE_URL}/{os.path.dirname(relative_path)}/{original_uri}'.replace('\\', '/')
+                    return f'URI="{updated_uri}"'
+
+                line = re.sub(r'URI="([^"]+)"', replace_uri, line)
+            elif line.strip() and not line.strip().startswith('#'):
+                # plain segment line (e.g., index0.ts, not a tag)
+                archive_url = f'{worker_url}{BASE_ARCHIVE_URL}/{os.path.dirname(relative_path)}/{line.strip()}'.replace('\\', '/')
+                line = f'{archive_url}\n'
+
+            updated_lines.append(line)
 
         with open(file_path, 'w') as f:
             f.writelines(updated_lines)
