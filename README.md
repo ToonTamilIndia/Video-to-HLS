@@ -23,7 +23,7 @@
     * **FFmpeg Preset:** Choose an encoding preset (e.g., `ultrafast`, `medium`, `slow`) to balance encoding speed with output quality/size.
     * **Segment Duration:** Control the length of individual HLS segments.
     * **Smart Upscaling Prevention:** The script automatically skips generating video renditions that would require upscaling the source video, saving processing time and ensuring quality.
-* **🚀 Optional GitHub Pages Deployment:** A convenient feature to automatically deploy your generated HLS content (playlists and segments) to a specified GitHub Pages repository and branch, making it instantly available for web playback.
+* **🚀 Optional GitHub Pages, Archive Deployment:** A convenient feature to automatically deploy your generated HLS content (playlists and segments) to a specified GitHub Pages repository and branch or Archive, making it instantly available for web playback.
 * **🖥️ Intuitive Command-Line Interface (CLI):** A clear and easy-to-use CLI allows for straightforward operation and seamless integration into automated scripts or workflows.
 * **📝 Comprehensive Logging:** Provides detailed, real-time logging of the entire conversion process, including FFmpeg commands executed. Verbose mode (`-v`) offers even more insight for debugging.
 * **🐍 Python-Powered & Cross-Platform:** Written in Python, making it compatible with Windows, macOS, and Linux systems where Python and FFmpeg are available.
@@ -207,6 +207,123 @@ If you intend to use the GitHub Pages deployment feature (`--deploy`), you must 
     # pip install -r requirements.txt
     ```
 
+
+6. **Deploy and Edit `workers.js` on Cloudflare (for Archive Deployment)**
+
+To deploy and update the `workers.js` file on Cloudflare using Cloudflare Workers:
+
+#### Initial Deployment
+
+1. **Install Wrangler CLI** (Cloudflare’s developer tool):
+
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. **Initialize a Cloudflare Workers project**:
+
+   ```bash
+   wrangler init my-worker
+   cd my-worker
+   ```
+
+3. **Replace the default script** with your `workers.js` file:
+
+   * Overwrite `./src/index.js` (or `index.ts` if using TypeScript) with your custom `workers.js` content.
+
+4. **Configure `wrangler.toml`**:
+
+   ```toml
+   name = "your-worker-name"
+   type = "javascript"
+
+   account_id = "your-cloudflare-account-id"
+   workers_dev = true
+   compatibility_date = "2025-05-23"
+   ```
+
+5. **Publish the Worker**:
+
+   ```bash
+   wrangler publish
+   ```
+
+#### Editing and Redeploying
+
+To make changes to your deployment:
+
+1. **Edit your `workers.js`**:
+
+   * Update the code in your local `src/index.js` (or wherever you placed the script).
+
+2. **Test Locally (Optional)**:
+
+   ```bash
+   wrangler dev
+   ```
+
+3. **Redeploy**:
+
+   ```bash
+   wrangler publish
+   ```
+Cloudflare will automatically update the deployed Worker with the latest version of your script.
+If you prefer to **deploy and edit `workers.js` via the Cloudflare website** (without using Wrangler CLI), here’s a clear step-by-step guide:
+
+---
+
+🚀 **Deploy and Edit `workers.js` on Cloudflare via Website**
+
+#### ✅ Initial Deployment
+
+1. **Log in to Cloudflare**
+   Go to: [https://dash.cloudflare.com](https://dash.cloudflare.com)
+
+2. **Navigate to Workers & Pages**
+
+   * Click on **“Workers & Pages”** in the sidebar.
+   * Click **“Create Application”** > **“Create Worker”**.
+
+3. **Set Up Your Worker**
+
+   * Name your Worker (e.g., `archive-deployer`).
+   * You’ll see a code editor in the browser.
+
+4. **Replace the default code**
+
+   * Delete the default code in the editor.
+   * Paste the contents of your `workers.js` file.
+
+5. **Test Your Worker**
+
+   * Use the **"Quick Edit"** tab to run test requests.
+   * Make sure your Worker behaves as expected.
+
+6. **Save and Deploy**
+
+   * Click **“Save and Deploy”** to publish your Worker live.
+
+---
+
+#### 🔄 Edit and Redeploy Later
+
+1. **Go back to your Worker**
+
+   * From the Cloudflare dashboard, go to **Workers & Pages**.
+   * Click on your Worker (e.g., `archive-deployer`).
+
+2. **Edit Code**
+
+   * Click **“Quick Edit”**.
+   * Modify the code directly in the browser editor.
+
+3. **Save and Redeploy**
+
+   * After making changes, click **“Save and Deploy”** again.
+   * Your changes go live immediately.
+
+---
+
 You are now fully set up and ready to use V2HLS! 🎉
 
 ---
@@ -244,7 +361,14 @@ Here's an example of the `config.json` structure provided with the repository:
     "enabled": true,
     "default_branch": "main",
     "temp_deploy_dir": "_deploy_tmp"
-  }
+  },
+  "archive_deployment": {
+        "enabled": true,
+        "max_workers": 5,
+        "worker_url": "",
+        "base_archive_url": "https://archive.org/download/{identifier}"
+    }
+}
 }
 ````
 
@@ -371,6 +495,54 @@ For the GitHub Pages deployment feature, V2HLS can use environment variables for
     $Env:GITHUB_BRANCH = "gh-pages"
     # To make them persistent across sessions, use System Properties > Environment Variables.
     ```
+
+
+### ✅ `archive_deployment` (object)
+
+**Description:** Contains settings for the optional Internet Archive deployment feature.
+**Properties:**
+
+* `enabled` (boolean):
+
+  * **Default:** `true`
+  * **Usage:** Enables the `--archive` CLI flag. If `false`, any archive deployment commands will be ignored, and a warning will be shown if attempted.
+
+* `max_workers` (integer):
+
+  * **Default:** `5`
+  * **Usage:** Number of parallel threads to use for uploading files to Internet Archive.
+
+* `worker_url` (string):
+
+  * **Usage:** Proxy/worker URL prepended to file paths in `.m3u8` playlists to optimize delivery through Cloudflare Workers.
+
+---
+
+### 🔐 Environment Variables for Internet Archive Deployment
+
+To avoid hardcoding sensitive credentials, you can use environment variables:
+
+* `ARCHIVE_ACCESS_KEY`: Your Internet Archive access key.
+* `ARCHIVE_SECRET_KEY`: Your Internet Archive secret key.
+
+**Setting Examples:**
+
+* Linux/macOS:
+
+  ```bash
+  export ARCHIVE_ACCESS_KEY="your_access_key"
+  export ARCHIVE_SECRET_KEY="your_secret_key"
+  ```
+
+* Windows (PowerShell):
+
+  ```powershell
+  $Env:ARCHIVE_ACCESS_KEY = "your_access_key"
+  $Env:ARCHIVE_SECRET_KEY = "your_secret_key"
+  ```
+
+---
+
 
 -----
 
