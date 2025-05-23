@@ -28,8 +28,15 @@ DEFAULT_CONFIG = {
         "enabled": False,
         "default_branch": "main",
         "temp_deploy_dir": "_deploy_tmp"
+    },
+    "archive_deployment": {
+        "enabled": False,
+        "max_workers": 5,
+        "worker_url": "",
+        "base_archive_url": "https://archive.org/download/{identifier}"
     }
 }
+
 
 def load_config() -> Dict[str, Any]:
     """Loads configuration from JSON file, falling back to defaults."""
@@ -429,7 +436,105 @@ def deploy_to_github_pages(
         # logging.info(f"Cleaning up temporary deployment directory: {base_tmp_dir}")
         # shutil.rmtree(base_tmp_dir)
 
+def deploy_to_internet_archive(
+    folder_to_upload: Path,
+    access_key: Optional[str],
+    secret_key: Optional[str],
+    max_workers: int,
+    worker_url: str
+):
+    import time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    import internetarchive
+    from rich.console import Console
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 
+    IDENTIFIER = folder_to_upload.name.replace(" ", "_") + str(time.strftime("_%Y%m%d_%H%M%S"))
+    BASE_ARCHIVE_URL = APP_CONFIG["archive_deployment"]["base_archive_url"].format(identifier=IDENTIFIER)
+    console = Console()
+
+    def rewrite_m3u8_file(file_path, relative_path):
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+
+        updated_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped and not stripped.startswith('#'):
+                archive_url = f'{worker_url}{BASE_ARCHIVE_URL}/{os.path.dirname(relative_path)}/{stripped}'.replace('\\', '/')
+                updated_lines.append(f'{archive_url}\n')
+            else:
+                updated_lines.append(line)
+
+        with open(file_path, 'w') as f:
+            f.writelines(updated_lines)
+
+    def rewrite_all_m3u8_files():
+        console.print("[bold yellow]Rewriting .m3u8 files with worker URLs...[/bold yellow]")
+        for root, _, files in os.walk(folder_to_upload):
+            for file in files:
+                if file.endswith('.m3u8'):
+                    full_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(full_path, folder_to_upload).replace("\\", "/")
+                    rewrite_m3u8_file(full_path, relative_path)
+                    console.print(f"[green]✔ Rewritten:[/green] {relative_path}")
+
+    def collect_files(folder):
+        uploads = []
+        for root, _, files in os.walk(folder):
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.relpath(full_path, folder).replace("\\", "/")
+                uploads.append((full_path, rel_path))
+        return uploads
+
+    def upload_file(local_path, remote_path):
+        try:
+            result = internetarchive.upload(
+                IDENTIFIER,
+                {remote_path: local_path},
+                access_key=access_key,
+                secret_key=secret_key,
+                retries=100,
+                verbose=False,
+            )
+            status = "success" if result[0].status_code == 200 else f"failed ({result[0].status_code})"
+        except Exception as e:
+            status = f"error: {str(e)}"
+        return remote_path, status
+
+    def upload_all(files):
+        console.print("\n[bold yellow]Uploading files to Internet Archive...[/bold yellow]")
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
+            BarColumn(),
+            TextColumn("{task.fields[status]}", justify="left"),
+            TimeElapsedColumn(),
+            transient=True,
+        ) as progress:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {
+                    executor.submit(upload_file, lp, rp): (lp, rp)
+                    for lp, rp in files
+                }
+
+                for future in as_completed(futures):
+                    lp, rp = futures[future]
+                    try:
+                        rel, result = future.result()
+                        color = "green" if "success" in result else "red"
+                        progress.add_task("upload", filename=rel, status=f"[{color}]{result}[/{color}]")
+                    except Exception as e:
+                        progress.add_task("upload", filename=rp, status=f"[red]exception: {e}[/red]")
+
+    # Start the deployment process
+    rewrite_all_m3u8_files()
+    console.print(f"\n[bold yellow]Collecting files in:[/] {folder_to_upload}")
+    file_list = collect_files(folder_to_upload)
+    console.print(f"[bold cyan]Found {len(file_list)} files to upload[/bold cyan]\n")
+    upload_all(file_list)
+    console.print(f"\n[bold green]✅ Upload complete Check : {worker_url}{BASE_ARCHIVE_URL}/master.m3u8.[/bold green]")
 # --- Main HLS Generation Function ---
 def create_hls_package(
     input_file: Path,
@@ -552,6 +657,15 @@ def main():
     
     # Deployment arguments
     deploy_group = parser.add_argument_group('GitHub Deployment Options')
+    archive_group = parser.add_argument_group('Internet Archive Deployment Options')
+    archive_group.add_argument(
+        "--archive", action="store_true",
+        help="Upload the output HLS folder to Internet Archive. Requires Internet Archive credentials."
+    )
+    archive_group.add_argument("--access-key", type=str, default=os.getenv("ARCHIVE_ACCESS_KEY"), help="Internet Archive access key (or set ARCHIVE_ACCESS_KEY env var).")
+    archive_group.add_argument("--secret-key", type=str, default=os.getenv("ARCHIVE_SECRET_KEY"), help="Internet Archive secret key (or set ARCHIVE_SECRET_KEY env var).")
+    archive_group.add_argument("--max-workers", type=int, default=APP_CONFIG["archive_deployment"]["max_workers"], help="Max workers for Internet Archive upload.")
+    archive_group.add_argument("--worker-url", type=str, default=APP_CONFIG["archive_deployment"]["worker_url"], help="Worker URL for Internet Archive upload.")
     deploy_group.add_argument(
         "--deploy", action="store_true",
         help="Deploy the output HLS folder to GitHub Pages. Requires GitHub credentials."
@@ -585,6 +699,14 @@ def main():
         github_token=args.gh_token,
         github_branch=args.gh_branch
     )
+    if args.archive or APP_CONFIG["archive_deployment"]["enabled"]:
+        deploy_to_internet_archive(
+            folder_to_upload=args.output,
+            access_key=args.access_key,
+            secret_key=args.secret_key,
+            max_workers=args.max_workers,
+            worker_url=args.worker_url
+        )
 
 if __name__ == "__main__":
     main()
