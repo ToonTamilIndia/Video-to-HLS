@@ -15,12 +15,7 @@ export default {
       });
 
       const contentType = response.headers.get('content-type') || '';
-      const fileExt = targetUrl.split('.').pop().toLowerCase();
 
-      // Define types you want to serve
-      const supportedTypes = ['m3u8', 'ts', 'mp4', 'mp3'];
-
-      // Create a new response with CORS headers
       const modifiedResponse = new Response(response.body, {
         status: response.status,
         headers: {
@@ -30,15 +25,9 @@ export default {
           'Content-Type': contentType,
         },
       });
-
-      // If it's one of the supported extensions, just return it
-      if (supportedTypes.includes(fileExt)) {
-        return modifiedResponse;
-      }
-
-      // Optionally block other content types
-      return new Response('Unsupported file type.', { status: 403 });
-
+      
+      return modifiedResponse;
+      
     } catch (error) {
       return new Response('Error fetching URL: ' + error.toString(), { status: 500 });
     }
