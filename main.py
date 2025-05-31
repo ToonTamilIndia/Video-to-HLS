@@ -154,7 +154,7 @@ def generate_video_renditions(
         cmd = [
             APP_CONFIG["ffmpeg_path"], "-y", # -y to overwrite output files without asking
             "-i", str(input_file),
-            "-an",
+            "-map", "0:v:0",  # Map the first video stream
             "-c:v", "libx264",
             "-b:v", settings["bitrate"],
             "-s", settings["resolution"],
@@ -199,7 +199,6 @@ def generate_audio_renditions(
         cmd = [
             APP_CONFIG["ffmpeg_path"], "-y",
             "-i", str(input_file),
-            "-vn",
             "-map", f"0:a:{i}", # Map specific audio stream
             "-c:a", "aac",
             "-b:a", APP_CONFIG["default_audio_bitrate"],
@@ -296,7 +295,13 @@ def generate_master_playlist(
             is_first_subtitle = False
         f.write("\n")
         
-
+        # Video renditions with associated audio and subtitles
+        # Ensure CODECS string is accurate for your encodes. avc1.xxxxxx for H.264, mp4a.40.2 for AAC-LC.
+        # You might need to probe the actual generated files for precise codec strings if issues arise.
+        # Common H.264 profiles: Baseline (avc1.42E0xx), Main (avc1.4D40xx), High (avc1.6400xx)
+        # For simplicity, using a common one.
+        # Example: CODECS="avc1.4D401F,mp4a.40.2" (H.264 Main Profile Level 3.1, AAC-LC)
+        
         # Sort video_paths by bitrate (ascending) for better player adaptation
         video_paths.sort(key=lambda x: bitrate_to_bandwidth(x[1]["bitrate"]))
 
@@ -441,10 +446,11 @@ def deploy_to_internet_archive(
     import time
     from concurrent.futures import ThreadPoolExecutor, as_completed
     import internetarchive
+    import re
     from rich.console import Console
     from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 
-    IDENTIFIER = folder_to_upload.name.replace(" ", "_") + str(time.strftime("_%Y%m%d_%H%M%S"))
+    IDENTIFIER = folder_to_upload.name.replace(" ", "_") + "-ToonTamilIndia"
     BASE_ARCHIVE_URL = APP_CONFIG["archive_deployment"]["base_archive_url"].format(identifier=IDENTIFIER)
     console = Console()
 
