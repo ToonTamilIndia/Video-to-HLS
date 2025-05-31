@@ -154,7 +154,7 @@ def generate_video_renditions(
         cmd = [
             APP_CONFIG["ffmpeg_path"], "-y", # -y to overwrite output files without asking
             "-i", str(input_file),
-            "-map", "0:v:0",  # Map the first video stream
+            "-an",
             "-c:v", "libx264",
             "-b:v", settings["bitrate"],
             "-s", settings["resolution"],
@@ -199,6 +199,7 @@ def generate_audio_renditions(
         cmd = [
             APP_CONFIG["ffmpeg_path"], "-y",
             "-i", str(input_file),
+            "-vn",
             "-map", f"0:a:{i}", # Map specific audio stream
             "-c:a", "aac",
             "-b:a", APP_CONFIG["default_audio_bitrate"],
