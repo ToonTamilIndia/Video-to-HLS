@@ -154,6 +154,7 @@ def generate_video_renditions(
         cmd = [
             APP_CONFIG["ffmpeg_path"], "-y", # -y to overwrite output files without asking
             "-i", str(input_file),
+            "-an"
             "-map", "0:v:0",  # Map the first video stream
             "-c:v", "libx264",
             "-b:v", settings["bitrate"],
@@ -450,7 +451,7 @@ def deploy_to_internet_archive(
     from rich.console import Console
     from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 
-    IDENTIFIER = folder_to_upload.name.replace(" ", "_") + "-ToonTamilIndia"
+    IDENTIFIER = folder_to_upload.name.replace(" ", "_") + str(time.strftime("_%Y%m%d_%H%M%S"))
     BASE_ARCHIVE_URL = APP_CONFIG["archive_deployment"]["base_archive_url"].format(identifier=IDENTIFIER)
     console = Console()
 
